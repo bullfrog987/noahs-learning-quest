@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Noah's Math Quest</title>
+    <title>Noah's Math Dungeon</title>
     <style>
         :root {
             --mc-green: #55FF55;
@@ -11,6 +11,7 @@
             --mc-grass: #3CB371;
             --mc-stone: #707070;
             --mc-red: #FF5555;
+            --mc-blue: #5555FF;
         }
         body {
             background-color: #1a1a1a;
@@ -25,7 +26,7 @@
             overflow: hidden;
             touch-action: manipulation;
         }
-        #game-container {
+        #menu, #game-container {
             text-align: center;
             border: 4px solid var(--mc-stone);
             padding: 20px;
@@ -33,153 +34,146 @@
             width: 90%;
             max-width: 500px;
             border-radius: 10px;
-            display: flex;
-            flex-direction: column;
         }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            font-size: 1rem;
-            color: var(--mc-green);
-            margin-bottom: 10px;
+        .hidden { display: none !important; }
+        
+        /* Menu Styles */
+        .menu-row { margin: 20px 0; }
+        .menu-btn {
+            background: var(--mc-stone);
+            border: 4px solid #000;
+            color: white;
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
         }
-        #monster-area {
-            height: 120px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 10px;
+        .menu-btn.active { background: var(--mc-grass); border-color: white; }
+        #start-btn { 
+            background: var(--mc-green); 
+            color: black; 
+            font-weight: bold; 
+            padding: 15px 40px; 
+            font-size: 1.5rem;
+            margin-top: 20px;
         }
-        #monster-sprite {
-            font-size: 3rem;
-            transition: transform 0.1s;
-        }
-        .health-bar {
-            width: 100%;
-            height: 15px;
-            background: #000;
-            border: 2px solid #fff;
-            margin-top: 10px;
-        }
-        #health-fill {
-            width: 100%;
-            height: 100%;
-            background: var(--mc-red);
-            transition: width 0.3s;
-        }
-        #timer-bar {
-            width: 100%;
-            height: 5px;
-            background: #555;
-            margin-bottom: 20px;
-        }
-        #timer-fill {
-            width: 100%;
-            height: 100%;
-            background: cyan;
-        }
-        #question {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            min-height: 60px; /* Prevents jumping */
-        }
-        .options-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        /* Fun 3D Minecraft Buttons */
+
+        /* Game Styles */
+        .status-bars { width: 100%; margin-bottom: 10px; }
+        .bar-label { font-size: 0.8rem; text-align: left; margin-top: 5px; }
+        .bar { width: 100%; height: 12px; background: #000; border: 2px solid #fff; }
+        #player-health-fill { width: 100%; height: 100%; background: var(--mc-green); transition: 0.3s; }
+        #enemy-health-fill { width: 100%; height: 100%; background: var(--mc-red); transition: 0.3s; }
+
+        #monster-sprite { font-size: 4rem; height: 80px; transition: transform 0.2s; display: flex; align-items: center; justify-content: center;}
+        
+        #question { font-size: 3rem; margin: 20px 0; min-height: 70px; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .option-btn {
             background-color: var(--mc-grass);
             border: none;
             border-bottom: 8px solid #2d8654;
-            border-right: 4px solid #2d8654;
             color: white;
             padding: 15px;
-            font-size: 1.8rem;
-            cursor: pointer;
+            font-size: 2rem;
             border-radius: 4px;
-            position: relative;
             transition: all 0.05s;
         }
-        .option-btn:active {
-            transform: translateY(4px);
-            border-bottom: 2px solid #2d8654;
-        }
-        #feedback-area {
-            height: 50px; /* Fixed height to stop stretching */
-            margin-top: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .shake { animation: shake 0.2s; }
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(5px); color: red; }
-            50% { transform: translateX(-5px); }
-            100% { transform: translateX(0); }
-        }
+        .option-btn:active { transform: translateY(4px); border-bottom: 2px solid #2d8654; }
+
+        /* Animations */
+        .shake { animation: shake 0.3s; }
+        .explode { animation: explode 0.5s forwards; }
+        @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-10px);} 75% {transform: translateX(10px);} }
+        @keyframes explode { 0% {transform: scale(1); opacity: 1;} 50% {transform: scale(2); color: orange;} 100% {transform: scale(0); opacity: 0;} }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <div class="header">
-        <span>LVL: <span id="level">1</span></span>
-        <span>XP: <span id="xp">0</span></span>
+<div id="menu">
+    <h1>MATH QUEST</h1>
+    <div class="menu-row">
+        <div>MODE:</div>
+        <button class="menu-btn active" onclick="setMode('add', this)">+</button>
+        <button class="menu-btn" onclick="setMode('sub', this)">-</button>
+        <button class="menu-btn" onclick="setMode('both', this)">BOTH</button>
+    </div>
+    <div class="menu-row">
+        <div>RANGE:</div>
+        <button class="menu-btn active" onclick="setRange(10, this)">1-10</button>
+        <button class="menu-btn" onclick="setRange(20, this)">1-20</button>
+    </div>
+    <button id="start-btn" onclick="startGame()">START</button>
+</div>
+
+<div id="game-container" class="hidden">
+    <div class="status-bars">
+        <div class="bar-label">YOUR HEALTH</div>
+        <div class="bar"><div id="player-health-fill"></div></div>
+        <div class="bar-label">MOB HEALTH</div>
+        <div class="bar"><div id="enemy-health-fill"></div></div>
     </div>
 
-    <div id="monster-area">
-        <div id="monster-sprite">🧟</div>
-        <div class="health-bar"><div id="health-fill"></div></div>
-    </div>
-
-    <div id="timer-bar"><div id="timer-fill"></div></div>
-    
-    <div id="question">Ready?</div>
-
+    <div id="monster-sprite">🧟</div>
+    <div id="question">?</div>
     <div class="options-grid" id="options"></div>
-
-    <div id="feedback-area"><span id="feedback"></span></div>
 </div>
 
 <script>
-    let xp = 0;
-    let level = 1;
-    let monsterHP = 100;
-    let currentAnswer = 0;
-    let timerWidth = 100;
-    let timerInterval;
-    const monsterList = ["🧟", "💀", "🕷️", "🧨", "🧱"];
+    let config = { mode: 'add', range: 10 };
+    let playerHP = 100, enemyHP = 100, xp = 0;
+    let currentAnswer = 0, startTime = 0;
+    const mobs = ["🧟", "💀", "🕷️", "🧨", "🧱", "👻"];
 
-    function startTimer() {
-        clearInterval(timerInterval);
-        timerWidth = 100;
-        document.getElementById('timer-fill').style.width = '100%';
-        
-        timerInterval = setInterval(() => {
-            timerWidth -= 1; // 10 seconds total (100 ticks of 100ms)
-            document.getElementById('timer-fill').style.width = timerWidth + '%';
-            if (timerWidth <= 0) {
-                clearInterval(timerInterval);
-                document.getElementById('feedback').innerText = "Too slow! New Problem!";
-                setTimeout(newQuestion, 1000);
-            }
-        }, 100);
+    function setMode(m, btn) {
+        config.mode = m;
+        clearActives(btn);
+    }
+
+    function setRange(r, btn) {
+        config.range = r;
+        clearActives(btn);
+    }
+
+    function clearActives(clickedBtn) {
+        Array.from(clickedBtn.parentNode.querySelectorAll('.menu-btn')).forEach(b => b.classList.remove('active'));
+        clickedBtn.classList.add('active');
+    }
+
+    function startGame() {
+        document.getElementById('menu').classList.add('hidden');
+        document.getElementById('game-container').classList.remove('hidden');
+        spawnEnemy();
+        newQuestion();
+    }
+
+    function spawnEnemy() {
+        enemyHP = 100;
+        const sprite = document.getElementById('monster-sprite');
+        sprite.innerText = mobs[Math.floor(Math.random() * mobs.length)];
+        sprite.classList.remove('explode');
+        sprite.style.opacity = 1;
+        document.getElementById('enemy-health-fill').style.width = '100%';
     }
 
     function newQuestion() {
-        const max = level * 5;
-        const n1 = Math.floor(Math.random() * max) + 1;
-        const n2 = Math.floor(Math.random() * max) + 1;
-        currentAnswer = n1 + n2;
+        let n1, n2, symbol;
+        let mode = config.mode === 'both' ? (Math.random() > 0.5 ? 'add' : 'sub') : config.mode;
 
-        document.getElementById('question').innerText = `${n1} + ${n2}`;
-        document.getElementById('feedback').innerText = "";
+        if (mode === 'add') {
+            n1 = Math.floor(Math.random() * config.range) + 1;
+            n2 = Math.floor(Math.random() * config.range) + 1;
+            currentAnswer = n1 + n2;
+            symbol = "+";
+        } else {
+            n1 = Math.floor(Math.random() * config.range) + 5;
+            n2 = Math.floor(Math.random() * n1) + 1;
+            currentAnswer = n1 - n2;
+            symbol = "-";
+        }
+
+        document.getElementById('question').innerText = `${n1} ${symbol} ${n2}`;
         generateOptions(currentAnswer);
-        startTimer();
+        startTime = Date.now();
     }
 
     function generateOptions(correct) {
@@ -187,12 +181,11 @@
         grid.innerHTML = '';
         let choices = [correct];
         while(choices.length < 4) {
-            let alt = correct + (Math.floor(Math.random() * 7) - 3);
+            let alt = correct + (Math.floor(Math.random() * 5) - 2);
             if(alt > 0 && !choices.includes(alt)) choices.push(alt);
+            else if (!choices.includes(correct + 5)) choices.push(correct+5);
         }
-        choices.sort(() => Math.random() - 0.5);
-
-        choices.forEach(val => {
+        choices.sort(() => Math.random() - 0.5).forEach(val => {
             const b = document.createElement('button');
             b.className = 'option-btn';
             b.innerText = val;
@@ -202,36 +195,40 @@
     }
 
     function check(val) {
+        const sprite = document.getElementById('monster-sprite');
         if(val === currentAnswer) {
-            clearInterval(timerInterval);
-            // Damage is higher if you answer faster
-            let damage = Math.ceil(timerWidth / 2); 
-            monsterHP -= damage;
+            let timeTaken = (Date.now() - startTime) / 1000;
+            // Higher damage for faster answers (Max 50 dmg, Min 10 dmg)
+            let damage = Math.max(10, Math.floor(50 - (timeTaken * 5))); 
+            enemyHP -= damage;
             
-            // Hit effect
-            const sprite = document.getElementById('monster-sprite');
             sprite.classList.add('shake');
             setTimeout(() => sprite.classList.remove('shake'), 200);
+            
+            document.getElementById('enemy-health-fill').style.width = Math.max(0, enemyHP) + '%';
 
-            document.getElementById('health-fill').style.width = monsterHP + '%';
-            document.getElementById('feedback').innerText = `HIT! -${damage} HP`;
-
-            if(monsterHP <= 0) {
-                xp += 20;
-                level++;
-                monsterHP = 100;
-                document.getElementById('xp').innerText = xp;
-                document.getElementById('level').innerText = level;
-                document.getElementById('monster-sprite').innerText = monsterList[level % 5];
-                document.getElementById('feedback').innerText = "MOB DEFEATED! +20 XP";
+            if(enemyHP <= 0) {
+                sprite.classList.add('explode');
+                setTimeout(() => {
+                    spawnEnemy();
+                    newQuestion();
+                }, 600);
+            } else {
+                setTimeout(newQuestion, 500);
             }
-            setTimeout(newQuestion, 800);
         } else {
-            document.getElementById('feedback').innerText = "MISS!";
+            // Wrong answer damage to Noah
+            playerHP -= 15;
+            document.getElementById('player-health-fill').style.width = Math.max(0, playerHP) + '%';
+            document.body.style.backgroundColor = "#441111";
+            setTimeout(() => document.body.style.backgroundColor = "#1a1a1a", 200);
+            
+            if(playerHP <= 0) {
+                alert("Gave Over! Back to the Menu!");
+                location.reload();
+            }
         }
     }
-
-    newQuestion();
 </script>
 </body>
 </html>
