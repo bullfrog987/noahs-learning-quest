@@ -10,6 +10,7 @@
             --mc-dirt: #8B4513;
             --mc-grass: #3CB371;
             --mc-stone: #707070;
+            --mc-red: #FF5555;
         }
         body {
             background-color: #1a1a1a;
@@ -30,130 +31,207 @@
             padding: 20px;
             background: #333;
             width: 90%;
-            max-width: 600px;
+            max-width: 500px;
             border-radius: 10px;
+            display: flex;
+            flex-direction: column;
         }
-        .stats {
+        .header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 20px;
-            font-size: 1.2rem;
+            font-size: 1rem;
             color: var(--mc-green);
+            margin-bottom: 10px;
+        }
+        #monster-area {
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        #monster-sprite {
+            font-size: 3rem;
+            transition: transform 0.1s;
+        }
+        .health-bar {
+            width: 100%;
+            height: 15px;
+            background: #000;
+            border: 2px solid #fff;
+            margin-top: 10px;
+        }
+        #health-fill {
+            width: 100%;
+            height: 100%;
+            background: var(--mc-red);
+            transition: width 0.3s;
+        }
+        #timer-bar {
+            width: 100%;
+            height: 5px;
+            background: #555;
+            margin-bottom: 20px;
+        }
+        #timer-fill {
+            width: 100%;
+            height: 100%;
+            background: cyan;
         }
         #question {
-            font-size: 3rem;
-            margin-bottom: 30px;
-            text-shadow: 3px 3px #000;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            min-height: 60px; /* Prevents jumping */
         }
         .options-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            gap: 12px;
         }
+        /* Fun 3D Minecraft Buttons */
         .option-btn {
             background-color: var(--mc-grass);
             border: none;
-            border-bottom: 6px solid #2d8654;
+            border-bottom: 8px solid #2d8654;
+            border-right: 4px solid #2d8654;
             color: white;
-            padding: 20px;
-            font-size: 2rem;
+            padding: 15px;
+            font-size: 1.8rem;
             cursor: pointer;
-            border-radius: 8px;
-            transition: transform 0.1s;
+            border-radius: 4px;
+            position: relative;
+            transition: all 0.05s;
         }
         .option-btn:active {
             transform: translateY(4px);
             border-bottom: 2px solid #2d8654;
         }
-        #feedback {
-            height: 40px;
-            margin-top: 20px;
-            font-weight: bold;
+        #feedback-area {
+            height: 50px; /* Fixed height to stop stretching */
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .shake { animation: shake 0.2s; }
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(5px); color: red; }
+            50% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
         }
     </style>
 </head>
 <body>
 
-<div id-="game-container">
-    <div class="stats">
-        <span>XP: <span id="score">0</span></span>
-        <span>Level: <span id="level">1</span></span>
+<div id="game-container">
+    <div class="header">
+        <span>LVL: <span id="level">1</span></span>
+        <span>XP: <span id="xp">0</span></span>
     </div>
+
+    <div id="monster-area">
+        <div id="monster-sprite">🧟</div>
+        <div class="health-bar"><div id="health-fill"></div></div>
+    </div>
+
+    <div id="timer-bar"><div id="timer-fill"></div></div>
     
-    <div id="question">? + ?</div>
+    <div id="question">Ready?</div>
 
-    <div class="options-grid" id="options">
-        </div>
+    <div class="options-grid" id="options"></div>
 
-    <div id="feedback"></div>
+    <div id="feedback-area"><span id="feedback"></span></div>
 </div>
 
 <script>
-    let score = 0;
+    let xp = 0;
     let level = 1;
+    let monsterHP = 100;
     let currentAnswer = 0;
+    let timerWidth = 100;
+    let timerInterval;
+    const monsterList = ["🧟", "💀", "🕷️", "🧨", "🧱"];
 
-    function generateQuestion() {
-        // Increase difficulty based on level
-        const max = level * 5;
-        const num1 = Math.floor(Math.random() * max) + 1;
-        const num2 = Math.floor(Math.random() * max) + 1;
-        currentAnswer = num1 + num2;
-
-        document.getElementById('question').innerText = `${num1} + ${num2}`;
-        document.getElementById('feedback').innerText = "";
+    function startTimer() {
+        clearInterval(timerInterval);
+        timerWidth = 100;
+        document.getElementById('timer-fill').style.width = '100%';
         
+        timerInterval = setInterval(() => {
+            timerWidth -= 1; // 10 seconds total (100 ticks of 100ms)
+            document.getElementById('timer-fill').style.width = timerWidth + '%';
+            if (timerWidth <= 0) {
+                clearInterval(timerInterval);
+                document.getElementById('feedback').innerText = "Too slow! New Problem!";
+                setTimeout(newQuestion, 1000);
+            }
+        }, 100);
+    }
+
+    function newQuestion() {
+        const max = level * 5;
+        const n1 = Math.floor(Math.random() * max) + 1;
+        const n2 = Math.floor(Math.random() * max) + 1;
+        currentAnswer = n1 + n2;
+
+        document.getElementById('question').innerText = `${n1} + ${n2}`;
+        document.getElementById('feedback').innerText = "";
         generateOptions(currentAnswer);
+        startTimer();
     }
 
     function generateOptions(correct) {
-        const optionsDiv = document.getElementById('options');
-        optionsDiv.innerHTML = '';
-        
-        let answers = [correct];
-        while(answers.length < 4) {
-            let wrong = correct + Math.floor(Math.random() * 5) - 2;
-            if(wrong !== correct && wrong > 0 && !answers.includes(wrong)) {
-                answers.push(wrong);
-            } else if (!answers.includes(correct + 5)) {
-                answers.push(correct + 5);
-            }
+        const grid = document.getElementById('options');
+        grid.innerHTML = '';
+        let choices = [correct];
+        while(choices.length < 4) {
+            let alt = correct + (Math.floor(Math.random() * 7) - 3);
+            if(alt > 0 && !choices.includes(alt)) choices.push(alt);
         }
-        
-        answers.sort(() => Math.random() - 0.5);
+        choices.sort(() => Math.random() - 0.5);
 
-        answers.forEach(ans => {
-            const btn = document.createElement('button');
-            btn.className = 'option-btn';
-            btn.innerText = ans;
-            btn.onclick = () => checkAnswer(ans);
-            optionsDiv.appendChild(btn);
+        choices.forEach(val => {
+            const b = document.createElement('button');
+            b.className = 'option-btn';
+            b.innerText = val;
+            b.onclick = () => check(val);
+            grid.appendChild(b);
         });
     }
 
-    function checkAnswer(selected) {
-        const feedback = document.getElementById('feedback');
-        if(selected === currentAnswer) {
-            score += 10;
-            feedback.style.color = "#55FF55";
-            feedback.innerText = "CRITICAL HIT! +10 XP";
+    function check(val) {
+        if(val === currentAnswer) {
+            clearInterval(timerInterval);
+            // Damage is higher if you answer faster
+            let damage = Math.ceil(timerWidth / 2); 
+            monsterHP -= damage;
             
-            if(score % 50 === 0) {
+            // Hit effect
+            const sprite = document.getElementById('monster-sprite');
+            sprite.classList.add('shake');
+            setTimeout(() => sprite.classList.remove('shake'), 200);
+
+            document.getElementById('health-fill').style.width = monsterHP + '%';
+            document.getElementById('feedback').innerText = `HIT! -${damage} HP`;
+
+            if(monsterHP <= 0) {
+                xp += 20;
                 level++;
+                monsterHP = 100;
+                document.getElementById('xp').innerText = xp;
                 document.getElementById('level').innerText = level;
+                document.getElementById('monster-sprite').innerText = monsterList[level % 5];
+                document.getElementById('feedback').innerText = "MOB DEFEATED! +20 XP";
             }
-            
-            document.getElementById('score').innerText = score;
-            setTimeout(generateQuestion, 1000);
+            setTimeout(newQuestion, 800);
         } else {
-            feedback.style.color = "#FF5555";
-            feedback.innerText = "Miss! Try again.";
+            document.getElementById('feedback').innerText = "MISS!";
         }
     }
 
-    // Initial Start
-    generateQuestion();
+    newQuestion();
 </script>
-
 </body>
 </html>
