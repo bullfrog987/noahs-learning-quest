@@ -6,100 +6,113 @@
     <title>Math Hero</title>
     <style>
         :root {
-            --mc-green: #55FF55; --mc-stone: #707070; --mc-red: #FF5555;
-            --mc-purp: #AA00AA; --mc-grass: #3CB371; --mc-border: #2d8654;
+            /* Muted Dungeon Palette */
+            --mc-green: #2d8654;   /* Deep Forest Green */
+            --mc-stone: #4e4e4e;   /* Dark Stone */
+            --mc-red: #aa0000;     /* Deep Red */
+            --mc-purp: #701c70;    /* Dark Magic Purple */
+            --mc-grass: #3e5e3e;   /* Muted Grass */
+            --mc-border: #1a1a1a;  /* Almost Black */
+            --mc-gold: #dbb40c;    /* Gold for highlights */
         }
         body {
-            background-color: #1a1a1a; color: white;
+            background-color: #1a1a1a; color: #cccccc;
             font-family: 'Courier New', Courier, monospace;
             display: flex; align-items: center; justify-content: center;
-            height: 100vh; margin: 0; overflow: hidden; touch-action: manipulation;
+            min-height: 100vh; margin: 0; 
+            touch-action: manipulation;
         }
         .hidden { display: none !important; }
 
-        /* Screens */
+        /* Screens - Scrollable for Mobile */
         #menu, #game-container, #reward-screen, #fail-screen {
             text-align: center; border: 6px solid var(--mc-stone);
-            background: #333; width: 90%; max-width: 550px;
-            padding: 20px; border-radius: 10px; z-index: 10;
+            background: #333; width: 95%; max-width: 550px;
+            padding: 15px; border-radius: 10px; z-index: 10;
+            max-height: 95vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
-        /* CUSTOM 760x312 BUTTONS */
+        /* 760x312 Button Logic */
         .btn-fancy {
             background-image: url('button.png');
             background-size: 100% 100%;
             background-color: transparent;
             border: none;
-            color: white; 
-            padding: 20px 30px; 
-            font-size: 1.4rem; 
-            margin: 8px;
-            cursor: pointer; 
-            transition: all 0.1s; 
-            text-shadow: 2px 2px #000;
-            display: inline-block;
-            min-width: 180px;
-            image-rendering: pixelated;
+            color: white; padding: 18px 25px; font-size: 1.2rem; margin: 5px;
+            cursor: pointer; transition: all 0.1s; text-shadow: 2px 2px #000;
+            display: inline-block; min-width: 160px; image-rendering: pixelated;
         }
         .btn-fancy:active { transform: translateY(6px) scale(0.95); }
-        .btn-fancy.active { filter: sepia(1) saturate(5) hue-rotate(90deg) brightness(1.2); }
+        .btn-fancy.active { 
+            filter: brightness(1.2) sepia(0.5) hue-rotate(-10deg);
+            outline: 3px solid var(--mc-gold);
+            outline-offset: -5px;
+        }
 
-        /* Sprite Windows */
+        /* Sprite Window Scaled for Mobile */
         #monster-sprite {
-            width: 200px; height: 200px; margin: 0 auto;
-            background-repeat: no-repeat; background-size: 600px 600px; 
+            width: 170px; height: 170px; margin: 0 auto;
+            background-repeat: no-repeat; background-size: 510px 510px; 
             image-rendering: pixelated; transition: transform 0.2s;
         }
         .boss-mode #monster-sprite { 
-            width: 280px; height: 280px; 
-            background-size: 840px 1120px; 
-            filter: drop-shadow(0 0 15px var(--mc-purp));
+            width: 230px; height: 230px; 
+            background-size: 690px 920px; 
+            filter: drop-shadow(0 0 15px var(--mc-purp)); 
         }
 
         /* Bars */
-        .bar { width: 100%; height: 16px; background: #000; border: 2px solid #fff; margin: 10px 0; }
+        .bar { width: 100%; height: 14px; background: #000; border: 2px solid #fff; margin: 8px 0; }
         #player-health-fill { width: 100%; height: 100%; background: var(--mc-green); transition: 0.3s; }
         #enemy-health-fill { width: 100%; height: 100%; background: var(--mc-red); transition: 0.3s; }
         #boss-timer-fill { width: 0%; height: 100%; background: var(--mc-purp); }
         
-        #question { font-size: 3.5rem; margin: 15px 0; font-weight: bold; }
-        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .screen-img { width: 100%; max-width: 300px; margin-bottom: 15px; border-radius: 10px; }
-
+        #question { font-size: 2.8rem; margin: 10px 0; font-weight: bold; color: white; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .screen-img { width: 100%; max-width: 250px; margin-bottom: 10px; border-radius: 10px; }
         .shake { animation: shake 0.3s; }
         @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-15px);} 75% {transform: translateX(15px);} }
     </style>
 </head>
 <body>
 
+<audio id="snd-bonk" src="bonk.mp3" preload="auto"></audio>
+<audio id="snd-death" src="death.mp3" preload="auto"></audio>
+<audio id="snd-fail" src="fail.mp3" preload="auto"></audio>
+<audio id="snd-ouch" src="ouch.mp3" preload="auto"></audio>
+<audio id="snd-ouch2" src="ouch2.mp3" preload="auto"></audio>
+<audio id="snd-victory" src="victory.mp3" preload="auto"></audio>
+
 <div id="menu">
     <img src="title.png" class="screen-img">
-    <h1 style="color: var(--mc-green); text-shadow: 2px 2px #000;">MATH HERO</h1>
+    <h2 style="margin: 5px 0; color: var(--mc-gold);">MATH HERO</h2>
     <div>
         <button class="btn-fancy active" onclick="setMode('add', this)">ADDITION</button>
         <button class="btn-fancy" onclick="setMode('sub', this)">SUBTRACTION</button>
         <button class="btn-fancy" onclick="setMode('both', this)">MIXED</button>
     </div>
-    <div style="margin-top: 10px;">
+    <div style="margin-top: 5px;">
         <button class="btn-fancy active" onclick="setRange(10, this)">RANGE 1-10</button>
         <button class="btn-fancy" onclick="setRange(20, this)">RANGE 1-20</button>
     </div>
-    <button class="btn-fancy" style="color:var(--mc-green); margin-top: 20px;" onclick="startGame()">START GAME</button>
+    <button class="btn-fancy" style="color:var(--mc-green); margin-top: 15px;" onclick="startGame()">START GAME</button>
 </div>
 
 <div id="game-container" class="hidden">
     <div style="display:flex; justify-content: space-between; align-items: center;">
         <button class="btn-fancy" style="min-width: 80px; padding: 10px; font-size: 1rem;" onclick="location.reload()">MENU</button>
-        <div style="color: var(--mc-green); text-align: right;">
-            <div>HERO HP</div>
+        <div style="text-align: right;">
+            <div style="font-size: 0.9rem;">HERO HP</div>
             <div id="kill-count" style="font-size: 0.8rem;">Kills: 0</div>
         </div>
     </div>
     <div class="bar"><div id="player-health-fill"></div></div>
     
     <div style="display:flex; justify-content: space-between; align-items: flex-end; margin-top: 5px;">
-        <div id="enemy-label">MOB HP</div>
-        <div id="boss-tracker" style="color:#aaa; font-size:0.9rem;">Next Boss: 10</div>
+        <div id="enemy-label" style="font-size: 0.9rem;">MOB HP</div>
+        <div id="boss-tracker" style="color:#aaa; font-size:0.8rem;">Next Boss: 3</div>
     </div>
     <div class="bar"><div id="enemy-health-fill"></div></div>
     
@@ -111,18 +124,16 @@
 
 <div id="reward-screen" class="hidden">
     <img src="victory.png" class="screen-img">
-    <h1 style="color: var(--mc-green); margin: 0;">VICTORY!</h1>
-    <p style="font-size: 1.2rem;">Boss Defeated. You are a Math Hero!</p>
+    <h1 style="color: var(--mc-gold); margin: 0;">VICTORY!</h1>
+    <p style="font-size: 1.1rem;">You are a true Math Hero.</p>
     <button class="btn-fancy" onclick="continueQuest()">CONTINUE</button>
-    <button class="btn-fancy" style="background:#555;" onclick="location.reload()">MENU</button>
 </div>
 
 <div id="fail-screen" class="hidden">
     <img src="fail.png" class="screen-img">
     <h1 style="color: var(--mc-red); margin: 0;">DEFEATED!</h1>
-    <p style="font-size: 1.2rem;">Don't give up! Try again.</p>
     <button class="btn-fancy" onclick="retryGame()">RETRY</button>
-    <button class="btn-fancy" style="background:#555;" onclick="location.reload()">MENU</button>
+    <button class="btn-fancy" style="opacity: 0.7;" onclick="location.reload()">MENU</button>
 </div>
 
 <script>
@@ -130,6 +141,11 @@
     let playerHP = 100, enemyHP = 100, kills = 0, questionsAnswered = 0;
     let currentAnswer = 0, startTime = 0, bossTimer = null, isBoss = false;
     let history = [];
+
+    function playSnd(id) { 
+        const s = document.getElementById(id);
+        if(s) { s.currentTime = 0; s.play().catch(e => console.log("Audio blocked")); }
+    }
 
     function setMode(m, btn) { 
         config.mode = m; 
@@ -153,15 +169,13 @@
     }
 
     function resetStats() {
-        playerHP = 100;
-        kills = 0;
-        questionsAnswered = 0;
+        playerHP = 100; kills = 0; questionsAnswered = 0;
         updateHealthBar();
         document.getElementById('kill-count').innerText = `Kills: 0`;
     }
 
     function spawnEnemy() {
-        let threshold = (config.range === 10) ? 10 : 15;
+        let threshold = (config.range === 10) ? 3 : 4;
         isBoss = (questionsAnswered >= threshold);
         enemyHP = 100;
         
@@ -192,7 +206,6 @@
     function newQuestion() {
         let n1, n2, sym, key;
         let m = config.mode === 'both' ? (Math.random() > 0.5 ? 'add' : 'sub') : config.mode;
-        
         for(let i=0; i<20; i++) {
             if (m === 'add') {
                 n1 = Math.floor(Math.random() * config.range) + 1;
@@ -201,15 +214,14 @@
             } else {
                 n1 = Math.floor(Math.random() * config.range) + 1;
                 n2 = Math.floor(Math.random() * n1);
-                if (n1 - n2 === 0 && Math.random() < 0.8 && n1 > 1) n2 = Math.floor(Math.random() * n1);
+                if (n1 - n2 === 0 && Math.random() < 0.8 && n1 > 1) n2 = Math.floor(Math.random() * (n1 - 1)) + 1;
                 currentAnswer = n1 - n2; sym = "-";
             }
             key = `${n1}${sym}${n2}`;
             if (!history.includes(key)) break;
         }
         history.push(key);
-        if (history.length > 6) history.shift();
-
+        if (history.length > 5) history.shift();
         document.getElementById('question').innerText = `${n1} ${sym} ${n2}`;
         generateOptions();
         startTime = Date.now();
@@ -236,7 +248,9 @@
     function checkAnswer(selected) {
         if(selected === currentAnswer) {
             clearInterval(bossTimer);
-            let damage = Math.max(10, Math.floor(50 - (Date.now() - startTime)/250));
+            playSnd(Math.random() > 0.5 ? 'snd-ouch' : 'snd-ouch2');
+            
+            let damage = Math.max(15, Math.floor(55 - (Date.now() - startTime)/200));
             enemyHP -= damage;
             document.getElementById('enemy-health-fill').style.width = Math.max(0, enemyHP) + '%';
             document.getElementById('monster-sprite').classList.add('shake');
@@ -245,19 +259,23 @@
             if(enemyHP <= 0) {
                 if(isBoss) { 
                     kills++;
+                    playSnd('snd-victory');
                     document.getElementById('kill-count').innerText = `Kills: ${kills}`;
                     document.getElementById('reward-screen').classList.remove('hidden'); 
                     document.getElementById('game-container').classList.add('hidden');
                 } else { 
+                    playSnd('snd-death');
                     questionsAnswered++; 
                     setTimeout(spawnEnemy, 500); 
                 }
             } else { setTimeout(newQuestion, 300); }
         } else {
+            playSnd('snd-bonk');
             playerHP -= 20;
             updateHealthBar();
             if(playerHP <= 0) {
                 clearInterval(bossTimer);
+                playSnd('snd-fail');
                 document.getElementById('game-container').classList.add('hidden');
                 document.getElementById('fail-screen').classList.remove('hidden');
             } else { newQuestion(); }
@@ -274,7 +292,7 @@
         bossTimer = setInterval(() => {
             t--; document.getElementById('boss-timer-fill').style.width = t + '%';
             if(t <= 0) { clearInterval(bossTimer); checkAnswer(-1); }
-        }, 100);
+        }, 120);
     }
 
     function continueQuest() {
@@ -285,9 +303,7 @@
         spawnEnemy();
     }
 
-    function retryGame() {
-        startGame();
-    }
+    function retryGame() { startGame(); }
 </script>
 </body>
 </html>
