@@ -6,69 +6,41 @@
     <title>Math Hero</title>
     <style>
         :root {
-            /* Muted Dungeon Palette */
-            --mc-green: #2d8654;   /* Deep Forest Green */
-            --mc-stone: #4e4e4e;   /* Dark Stone */
-            --mc-red: #aa0000;     /* Deep Red */
-            --mc-purp: #701c70;    /* Dark Magic Purple */
-            --mc-grass: #3e5e3e;   /* Muted Grass */
-            --mc-border: #1a1a1a;  /* Almost Black */
-            --mc-gold: #dbb40c;    /* Gold for highlights */
+            --mc-green: #2d8654; --mc-stone: #4e4e4e; --mc-red: #aa0000;
+            --mc-purp: #701c70; --mc-grass: #3e5e3e; --mc-border: #1a1a1a; --mc-gold: #dbb40c;
         }
         body {
             background-color: #1a1a1a; color: #cccccc;
             font-family: 'Courier New', Courier, monospace;
             display: flex; align-items: center; justify-content: center;
-            min-height: 100vh; margin: 0; 
-            touch-action: manipulation;
+            min-height: 100vh; margin: 0; touch-action: manipulation;
         }
         .hidden { display: none !important; }
-
-        /* Screens - Scrollable for Mobile */
         #menu, #game-container, #reward-screen, #fail-screen {
             text-align: center; border: 6px solid var(--mc-stone);
             background: #333; width: 95%; max-width: 550px;
             padding: 15px; border-radius: 10px; z-index: 10;
-            max-height: 95vh;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+            max-height: 95vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
         }
-
-        /* 760x312 Button Logic */
         .btn-fancy {
-            background-image: url('button.png');
-            background-size: 100% 100%;
-            background-color: transparent;
-            border: none;
+            background-image: url('button.png'); background-size: 100% 100%;
+            background-color: transparent; border: none;
             color: white; padding: 18px 25px; font-size: 1.2rem; margin: 5px;
             cursor: pointer; transition: all 0.1s; text-shadow: 2px 2px #000;
             display: inline-block; min-width: 160px; image-rendering: pixelated;
         }
         .btn-fancy:active { transform: translateY(6px) scale(0.95); }
-        .btn-fancy.active { 
-            filter: brightness(1.2) sepia(0.5) hue-rotate(-10deg);
-            outline: 3px solid var(--mc-gold);
-            outline-offset: -5px;
-        }
-
-        /* Sprite Window Scaled for Mobile */
+        .btn-fancy.active { filter: brightness(1.2) sepia(0.5) hue-rotate(-10deg); outline: 3px solid var(--mc-gold); outline-offset: -5px; }
         #monster-sprite {
             width: 170px; height: 170px; margin: 0 auto;
             background-repeat: no-repeat; background-size: 510px 510px; 
             image-rendering: pixelated; transition: transform 0.2s;
         }
-        .boss-mode #monster-sprite { 
-            width: 230px; height: 230px; 
-            background-size: 690px 920px; 
-            filter: drop-shadow(0 0 15px var(--mc-purp)); 
-        }
-
-        /* Bars */
+        .boss-mode #monster-sprite { width: 230px; height: 230px; background-size: 690px 920px; filter: drop-shadow(0 0 15px var(--mc-purp)); }
         .bar { width: 100%; height: 14px; background: #000; border: 2px solid #fff; margin: 8px 0; }
         #player-health-fill { width: 100%; height: 100%; background: var(--mc-green); transition: 0.3s; }
         #enemy-health-fill { width: 100%; height: 100%; background: var(--mc-red); transition: 0.3s; }
         #boss-timer-fill { width: 0%; height: 100%; background: var(--mc-purp); }
-        
         #question { font-size: 2.8rem; margin: 10px 0; font-weight: bold; color: white; }
         .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .screen-img { width: 100%; max-width: 250px; margin-bottom: 10px; border-radius: 10px; }
@@ -103,19 +75,14 @@
 <div id="game-container" class="hidden">
     <div style="display:flex; justify-content: space-between; align-items: center;">
         <button class="btn-fancy" style="min-width: 80px; padding: 10px; font-size: 1rem;" onclick="location.reload()">MENU</button>
-        <div style="text-align: right;">
-            <div style="font-size: 0.9rem;">HERO HP</div>
-            <div id="kill-count" style="font-size: 0.8rem;">Kills: 0</div>
-        </div>
+        <div style="text-align: right;"><div style="font-size: 0.9rem;">HERO HP</div><div id="kill-count" style="font-size: 0.8rem;">Kills: 0</div></div>
     </div>
     <div class="bar"><div id="player-health-fill"></div></div>
-    
     <div style="display:flex; justify-content: space-between; align-items: flex-end; margin-top: 5px;">
         <div id="enemy-label" style="font-size: 0.9rem;">MOB HP</div>
         <div id="boss-tracker" style="color:#aaa; font-size:0.8rem;">Next Boss: 3</div>
     </div>
     <div class="bar"><div id="enemy-health-fill"></div></div>
-    
     <div id="boss-timer-bar" class="bar hidden"><div id="boss-timer-fill"></div></div>
     <div id="monster-sprite"></div>
     <div id="question">?</div>
@@ -184,6 +151,7 @@
         document.getElementById('boss-tracker').style.color = (remaining === 1) ? "var(--mc-red)" : "#aaa";
 
         const sprite = document.getElementById('monster-sprite');
+        sprite.style.opacity = 1; // Ensure sprite is visible
         document.getElementById('enemy-health-fill').style.width = '100%';
 
         if (isBoss) {
@@ -248,8 +216,6 @@
     function checkAnswer(selected) {
         if(selected === currentAnswer) {
             clearInterval(bossTimer);
-            playSnd(Math.random() > 0.5 ? 'snd-ouch' : 'snd-ouch2');
-            
             let damage = Math.max(15, Math.floor(55 - (Date.now() - startTime)/200));
             enemyHP -= damage;
             document.getElementById('enemy-health-fill').style.width = Math.max(0, enemyHP) + '%';
@@ -260,7 +226,6 @@
                 if(isBoss) { 
                     kills++;
                     playSnd('snd-victory');
-                    document.getElementById('kill-count').innerText = `Kills: ${kills}`;
                     document.getElementById('reward-screen').classList.remove('hidden'); 
                     document.getElementById('game-container').classList.add('hidden');
                 } else { 
@@ -268,7 +233,10 @@
                     questionsAnswered++; 
                     setTimeout(spawnEnemy, 500); 
                 }
-            } else { setTimeout(newQuestion, 300); }
+            } else { 
+                playSnd(Math.random() > 0.5 ? 'snd-ouch' : 'snd-ouch2');
+                setTimeout(newQuestion, 300); 
+            }
         } else {
             playSnd('snd-bonk');
             playerHP -= 20;
@@ -300,7 +268,8 @@
         document.getElementById('game-container').classList.remove('hidden');
         playerHP = 100;
         updateHealthBar();
-        spawnEnemy();
+        questionsAnswered = 0; // Clear the boss flag
+        spawnEnemy(); // This will now show the goblins correctly
     }
 
     function retryGame() { startGame(); }
