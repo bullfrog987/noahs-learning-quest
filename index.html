@@ -3,231 +3,290 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Noah's Math Dungeon</title>
+    <title>Math Hero</title>
     <style>
         :root {
-            --mc-green: #55FF55;
-            --mc-dirt: #8B4513;
-            --mc-grass: #3CB371;
-            --mc-stone: #707070;
-            --mc-red: #FF5555;
-            --mc-blue: #5555FF;
+            --mc-green: #55FF55; --mc-stone: #707070; --mc-red: #FF5555;
+            --mc-purp: #AA00AA; --mc-grass: #3CB371; --mc-border: #2d8654;
         }
         body {
-            background-color: #1a1a1a;
-            color: white;
+            background-color: #1a1a1a; color: white;
             font-family: 'Courier New', Courier, monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-            touch-action: manipulation;
-        }
-        #menu, #game-container {
-            text-align: center;
-            border: 4px solid var(--mc-stone);
-            padding: 20px;
-            background: #333;
-            width: 90%;
-            max-width: 500px;
-            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            height: 100vh; margin: 0; overflow: hidden; touch-action: manipulation;
         }
         .hidden { display: none !important; }
-        
-        /* Menu Styles */
-        .menu-row { margin: 20px 0; }
-        .menu-btn {
-            background: var(--mc-stone);
-            border: 4px solid #000;
-            color: white;
-            padding: 10px;
-            margin: 5px;
-            cursor: pointer;
-        }
-        .menu-btn.active { background: var(--mc-grass); border-color: white; }
-        #start-btn { 
-            background: var(--mc-green); 
-            color: black; 
-            font-weight: bold; 
-            padding: 15px 40px; 
-            font-size: 1.5rem;
-            margin-top: 20px;
+
+        /* Screens */
+        #menu, #game-container, #reward-screen, #fail-screen {
+            text-align: center; border: 6px solid var(--mc-stone);
+            background: #333; width: 90%; max-width: 550px;
+            padding: 20px; border-radius: 10px; z-index: 10;
         }
 
-        /* Game Styles */
-        .status-bars { width: 100%; margin-bottom: 10px; }
-        .bar-label { font-size: 0.8rem; text-align: left; margin-top: 5px; }
-        .bar { width: 100%; height: 12px; background: #000; border: 2px solid #fff; }
+        /* CUSTOM 760x312 BUTTONS */
+        .btn-fancy {
+            background-image: url('button.png');
+            background-size: 100% 100%;
+            background-color: transparent;
+            border: none;
+            color: white; 
+            padding: 20px 30px; 
+            font-size: 1.4rem; 
+            margin: 8px;
+            cursor: pointer; 
+            transition: all 0.1s; 
+            text-shadow: 2px 2px #000;
+            display: inline-block;
+            min-width: 180px;
+            image-rendering: pixelated;
+        }
+        .btn-fancy:active { transform: translateY(6px) scale(0.95); }
+        .btn-fancy.active { filter: sepia(1) saturate(5) hue-rotate(90deg) brightness(1.2); }
+
+        /* Sprite Windows */
+        #monster-sprite {
+            width: 200px; height: 200px; margin: 0 auto;
+            background-repeat: no-repeat; background-size: 600px 600px; 
+            image-rendering: pixelated; transition: transform 0.2s;
+        }
+        .boss-mode #monster-sprite { 
+            width: 280px; height: 280px; 
+            background-size: 840px 1120px; 
+            filter: drop-shadow(0 0 15px var(--mc-purp));
+        }
+
+        /* Bars */
+        .bar { width: 100%; height: 16px; background: #000; border: 2px solid #fff; margin: 10px 0; }
         #player-health-fill { width: 100%; height: 100%; background: var(--mc-green); transition: 0.3s; }
         #enemy-health-fill { width: 100%; height: 100%; background: var(--mc-red); transition: 0.3s; }
-
-        #monster-sprite { font-size: 4rem; height: 80px; transition: transform 0.2s; display: flex; align-items: center; justify-content: center;}
+        #boss-timer-fill { width: 0%; height: 100%; background: var(--mc-purp); }
         
-        #question { font-size: 3rem; margin: 20px 0; min-height: 70px; }
-        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .option-btn {
-            background-color: var(--mc-grass);
-            border: none;
-            border-bottom: 8px solid #2d8654;
-            color: white;
-            padding: 15px;
-            font-size: 2rem;
-            border-radius: 4px;
-            transition: all 0.05s;
-        }
-        .option-btn:active { transform: translateY(4px); border-bottom: 2px solid #2d8654; }
+        #question { font-size: 3.5rem; margin: 15px 0; font-weight: bold; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .screen-img { width: 100%; max-width: 300px; margin-bottom: 15px; border-radius: 10px; }
 
-        /* Animations */
         .shake { animation: shake 0.3s; }
-        .explode { animation: explode 0.5s forwards; }
-        @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-10px);} 75% {transform: translateX(10px);} }
-        @keyframes explode { 0% {transform: scale(1); opacity: 1;} 50% {transform: scale(2); color: orange;} 100% {transform: scale(0); opacity: 0;} }
+        @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-15px);} 75% {transform: translateX(15px);} }
     </style>
 </head>
 <body>
 
 <div id="menu">
-    <h1>MATH QUEST</h1>
-    <div class="menu-row">
-        <div>MODE:</div>
-        <button class="menu-btn active" onclick="setMode('add', this)">+</button>
-        <button class="menu-btn" onclick="setMode('sub', this)">-</button>
-        <button class="menu-btn" onclick="setMode('both', this)">BOTH</button>
+    <img src="title.png" class="screen-img">
+    <h1 style="color: var(--mc-green); text-shadow: 2px 2px #000;">MATH HERO</h1>
+    <div>
+        <button class="btn-fancy active" onclick="setMode('add', this)">ADDITION</button>
+        <button class="btn-fancy" onclick="setMode('sub', this)">SUBTRACTION</button>
+        <button class="btn-fancy" onclick="setMode('both', this)">MIXED</button>
     </div>
-    <div class="menu-row">
-        <div>RANGE:</div>
-        <button class="menu-btn active" onclick="setRange(10, this)">1-10</button>
-        <button class="menu-btn" onclick="setRange(20, this)">1-20</button>
+    <div style="margin-top: 10px;">
+        <button class="btn-fancy active" onclick="setRange(10, this)">RANGE 1-10</button>
+        <button class="btn-fancy" onclick="setRange(20, this)">RANGE 1-20</button>
     </div>
-    <button id="start-btn" onclick="startGame()">START</button>
+    <button class="btn-fancy" style="color:var(--mc-green); margin-top: 20px;" onclick="startGame()">START GAME</button>
 </div>
 
 <div id="game-container" class="hidden">
-    <div class="status-bars">
-        <div class="bar-label">YOUR HEALTH</div>
-        <div class="bar"><div id="player-health-fill"></div></div>
-        <div class="bar-label">MOB HEALTH</div>
-        <div class="bar"><div id="enemy-health-fill"></div></div>
+    <div style="display:flex; justify-content: space-between; align-items: center;">
+        <button class="btn-fancy" style="min-width: 80px; padding: 10px; font-size: 1rem;" onclick="location.reload()">MENU</button>
+        <div style="color: var(--mc-green); text-align: right;">
+            <div>HERO HP</div>
+            <div id="kill-count" style="font-size: 0.8rem;">Kills: 0</div>
+        </div>
     </div>
-
-    <div id="monster-sprite">🧟</div>
+    <div class="bar"><div id="player-health-fill"></div></div>
+    
+    <div style="display:flex; justify-content: space-between; align-items: flex-end; margin-top: 5px;">
+        <div id="enemy-label">MOB HP</div>
+        <div id="boss-tracker" style="color:#aaa; font-size:0.9rem;">Next Boss: 10</div>
+    </div>
+    <div class="bar"><div id="enemy-health-fill"></div></div>
+    
+    <div id="boss-timer-bar" class="bar hidden"><div id="boss-timer-fill"></div></div>
+    <div id="monster-sprite"></div>
     <div id="question">?</div>
     <div class="options-grid" id="options"></div>
 </div>
 
+<div id="reward-screen" class="hidden">
+    <img src="victory.png" class="screen-img">
+    <h1 style="color: var(--mc-green); margin: 0;">VICTORY!</h1>
+    <p style="font-size: 1.2rem;">Boss Defeated. You are a Math Hero!</p>
+    <button class="btn-fancy" onclick="continueQuest()">CONTINUE</button>
+    <button class="btn-fancy" style="background:#555;" onclick="location.reload()">MENU</button>
+</div>
+
+<div id="fail-screen" class="hidden">
+    <img src="fail.png" class="screen-img">
+    <h1 style="color: var(--mc-red); margin: 0;">DEFEATED!</h1>
+    <p style="font-size: 1.2rem;">Don't give up! Try again.</p>
+    <button class="btn-fancy" onclick="retryGame()">RETRY</button>
+    <button class="btn-fancy" style="background:#555;" onclick="location.reload()">MENU</button>
+</div>
+
 <script>
     let config = { mode: 'add', range: 10 };
-    let playerHP = 100, enemyHP = 100, xp = 0;
-    let currentAnswer = 0, startTime = 0;
-    const mobs = ["🧟", "💀", "🕷️", "🧨", "🧱", "👻"];
+    let playerHP = 100, enemyHP = 100, kills = 0, questionsAnswered = 0;
+    let currentAnswer = 0, startTime = 0, bossTimer = null, isBoss = false;
+    let history = [];
 
-    function setMode(m, btn) {
-        config.mode = m;
-        clearActives(btn);
+    function setMode(m, btn) { 
+        config.mode = m; 
+        Array.from(btn.parentNode.querySelectorAll('.btn-fancy')).forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
     }
 
-    function setRange(r, btn) {
-        config.range = r;
-        clearActives(btn);
-    }
-
-    function clearActives(clickedBtn) {
-        Array.from(clickedBtn.parentNode.querySelectorAll('.menu-btn')).forEach(b => b.classList.remove('active'));
-        clickedBtn.classList.add('active');
+    function setRange(r, btn) { 
+        config.range = r; 
+        Array.from(btn.parentNode.querySelectorAll('.btn-fancy')).forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
     }
 
     function startGame() {
         document.getElementById('menu').classList.add('hidden');
+        document.getElementById('fail-screen').classList.add('hidden');
+        document.getElementById('reward-screen').classList.add('hidden');
         document.getElementById('game-container').classList.remove('hidden');
+        resetStats();
         spawnEnemy();
-        newQuestion();
+    }
+
+    function resetStats() {
+        playerHP = 100;
+        kills = 0;
+        questionsAnswered = 0;
+        updateHealthBar();
+        document.getElementById('kill-count').innerText = `Kills: 0`;
     }
 
     function spawnEnemy() {
+        let threshold = (config.range === 10) ? 10 : 15;
+        isBoss = (questionsAnswered >= threshold);
         enemyHP = 100;
+        
+        let remaining = threshold - questionsAnswered;
+        document.getElementById('boss-tracker').innerText = isBoss ? "BOSS FIGHT!" : `Next Boss: ${remaining}`;
+        document.getElementById('boss-tracker').style.color = (remaining === 1) ? "var(--mc-red)" : "#aaa";
+
         const sprite = document.getElementById('monster-sprite');
-        sprite.innerText = mobs[Math.floor(Math.random() * mobs.length)];
-        sprite.classList.remove('explode');
-        sprite.style.opacity = 1;
         document.getElementById('enemy-health-fill').style.width = '100%';
+
+        if (isBoss) {
+            document.getElementById('game-container').classList.add('boss-mode');
+            document.getElementById('boss-timer-bar').classList.remove('hidden');
+            sprite.style.backgroundImage = "url('boss.png')";
+            let bIndex = Math.floor(Math.random() * 12);
+            sprite.style.backgroundPosition = `${(bIndex % 3) * 50}% ${Math.floor(bIndex / 3) * 33.33}%`;
+            questionsAnswered = 0; 
+        } else {
+            document.getElementById('game-container').classList.remove('boss-mode');
+            document.getElementById('boss-timer-bar').classList.add('hidden');
+            sprite.style.backgroundImage = "url('goblins.png')";
+            let gIndex = Math.floor(Math.random() * 9);
+            sprite.style.backgroundPosition = `${(gIndex % 3) * 50}% ${Math.floor(gIndex / 3) * 50}%`;
+        }
+        newQuestion();
     }
 
     function newQuestion() {
-        let n1, n2, symbol;
-        let mode = config.mode === 'both' ? (Math.random() > 0.5 ? 'add' : 'sub') : config.mode;
-
-        if (mode === 'add') {
-            n1 = Math.floor(Math.random() * config.range) + 1;
-            n2 = Math.floor(Math.random() * config.range) + 1;
-            currentAnswer = n1 + n2;
-            symbol = "+";
-        } else {
-            n1 = Math.floor(Math.random() * config.range) + 5;
-            n2 = Math.floor(Math.random() * n1) + 1;
-            currentAnswer = n1 - n2;
-            symbol = "-";
+        let n1, n2, sym, key;
+        let m = config.mode === 'both' ? (Math.random() > 0.5 ? 'add' : 'sub') : config.mode;
+        
+        for(let i=0; i<20; i++) {
+            if (m === 'add') {
+                n1 = Math.floor(Math.random() * config.range) + 1;
+                n2 = Math.floor(Math.random() * config.range) + 1;
+                currentAnswer = n1 + n2; sym = "+";
+            } else {
+                n1 = Math.floor(Math.random() * config.range) + 1;
+                n2 = Math.floor(Math.random() * n1);
+                if (n1 - n2 === 0 && Math.random() < 0.8 && n1 > 1) n2 = Math.floor(Math.random() * n1);
+                currentAnswer = n1 - n2; sym = "-";
+            }
+            key = `${n1}${sym}${n2}`;
+            if (!history.includes(key)) break;
         }
+        history.push(key);
+        if (history.length > 6) history.shift();
 
-        document.getElementById('question').innerText = `${n1} ${symbol} ${n2}`;
-        generateOptions(currentAnswer);
+        document.getElementById('question').innerText = `${n1} ${sym} ${n2}`;
+        generateOptions();
         startTime = Date.now();
+        if(isBoss) startBossTimer();
     }
 
-    function generateOptions(correct) {
+    function generateOptions() {
         const grid = document.getElementById('options');
         grid.innerHTML = '';
-        let choices = [correct];
-        while(choices.length < 4) {
-            let alt = correct + (Math.floor(Math.random() * 5) - 2);
-            if(alt > 0 && !choices.includes(alt)) choices.push(alt);
-            else if (!choices.includes(correct + 5)) choices.push(correct+5);
+        let choices = new Set([currentAnswer]);
+        while(choices.size < 4) {
+            let alt = currentAnswer + Math.floor(Math.random() * 7) - 3;
+            if (alt >= 0) choices.add(alt);
         }
-        choices.sort(() => Math.random() - 0.5).forEach(val => {
+        [...choices].sort(() => Math.random() - 0.5).forEach(val => {
             const b = document.createElement('button');
-            b.className = 'option-btn';
+            b.className = 'btn-fancy';
             b.innerText = val;
-            b.onclick = () => check(val);
+            b.onclick = () => checkAnswer(val);
             grid.appendChild(b);
         });
     }
 
-    function check(val) {
-        const sprite = document.getElementById('monster-sprite');
-        if(val === currentAnswer) {
-            let timeTaken = (Date.now() - startTime) / 1000;
-            // Higher damage for faster answers (Max 50 dmg, Min 10 dmg)
-            let damage = Math.max(10, Math.floor(50 - (timeTaken * 5))); 
+    function checkAnswer(selected) {
+        if(selected === currentAnswer) {
+            clearInterval(bossTimer);
+            let damage = Math.max(10, Math.floor(50 - (Date.now() - startTime)/250));
             enemyHP -= damage;
-            
-            sprite.classList.add('shake');
-            setTimeout(() => sprite.classList.remove('shake'), 200);
-            
             document.getElementById('enemy-health-fill').style.width = Math.max(0, enemyHP) + '%';
-
-            if(enemyHP <= 0) {
-                sprite.classList.add('explode');
-                setTimeout(() => {
-                    spawnEnemy();
-                    newQuestion();
-                }, 600);
-            } else {
-                setTimeout(newQuestion, 500);
-            }
-        } else {
-            // Wrong answer damage to Noah
-            playerHP -= 15;
-            document.getElementById('player-health-fill').style.width = Math.max(0, playerHP) + '%';
-            document.body.style.backgroundColor = "#441111";
-            setTimeout(() => document.body.style.backgroundColor = "#1a1a1a", 200);
+            document.getElementById('monster-sprite').classList.add('shake');
+            setTimeout(() => document.getElementById('monster-sprite').classList.remove('shake'), 200);
             
+            if(enemyHP <= 0) {
+                if(isBoss) { 
+                    kills++;
+                    document.getElementById('kill-count').innerText = `Kills: ${kills}`;
+                    document.getElementById('reward-screen').classList.remove('hidden'); 
+                    document.getElementById('game-container').classList.add('hidden');
+                } else { 
+                    questionsAnswered++; 
+                    setTimeout(spawnEnemy, 500); 
+                }
+            } else { setTimeout(newQuestion, 300); }
+        } else {
+            playerHP -= 20;
+            updateHealthBar();
             if(playerHP <= 0) {
-                alert("Gave Over! Back to the Menu!");
-                location.reload();
-            }
+                clearInterval(bossTimer);
+                document.getElementById('game-container').classList.add('hidden');
+                document.getElementById('fail-screen').classList.remove('hidden');
+            } else { newQuestion(); }
         }
+    }
+
+    function updateHealthBar() {
+        document.getElementById('player-health-fill').style.width = Math.max(0, playerHP) + '%';
+    }
+
+    function startBossTimer() {
+        clearInterval(bossTimer);
+        let t = 100;
+        bossTimer = setInterval(() => {
+            t--; document.getElementById('boss-timer-fill').style.width = t + '%';
+            if(t <= 0) { clearInterval(bossTimer); checkAnswer(-1); }
+        }, 100);
+    }
+
+    function continueQuest() {
+        document.getElementById('reward-screen').classList.add('hidden');
+        document.getElementById('game-container').classList.remove('hidden');
+        playerHP = 100;
+        updateHealthBar();
+        spawnEnemy();
+    }
+
+    function retryGame() {
+        startGame();
     }
 </script>
 </body>
